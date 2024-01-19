@@ -35,9 +35,9 @@ RUN git clone https://github.com/ccsb-scripps/AutoDock-GPU ; cd AutoDock-GPU ; m
 # Install Vina-GPU-2.1
 RUN cd /dock/ ; ls
 RUN git clone https://github.com/ashtawy/Vina-GPU-2.1.git ; cd Vina-GPU-2.1 ; tar -zxvf partial_boost_1_84.tar.gz
-RUN pwd ; cd /dock/QuickVina-W-GPU-2.1/ ; pwd ; make clean ; ls ; make source ; make
-RUN pwd ; cd /dock/QuickVina2-GPU-2.1/ ; pwd ; make clean ; ls ; make source ; make
-RUN pwd ; cd /dock/AutoDock-Vina-GPU-2.1/ ; pwd ; make clean ; ls ; make source ; make
+RUN pwd ; cd /dock/Vina-GPU-2.1/QuickVina-W-GPU-2.1/ ; pwd ; make clean ; ls ; make source ; make
+RUN pwd ; cd /dock/Vina-GPU-2.1/QuickVina2-GPU-2.1/ ; pwd ; make clean ; ls ; make source ; make
+RUN pwd ; cd /dock/Vina-GPU-2.1/AutoDock-Vina-GPU-2.1/ ; pwd ; make clean ; ls ; make source ; make
 
 # Build and run
 # docker build -t vinagpu .
