@@ -16,7 +16,11 @@
 #include <fstream>
 #include <stdexcept>
 #include <iomanip>
+#include <libgen.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <limits.h>
+#include <string>
 
 using namespace std;
 volatile enum { FINISH, DOCKING, ABORT} status;
@@ -53,6 +57,15 @@ void print_process() {
 		for (int i = 0; i < 16; i++)printf("=");
 		printf("|\n"); fflush(stdout);
 	}
+}
+
+std::string getExecutableDir() {
+    char path[PATH_MAX];
+    ssize_t count = readlink("/proc/self/exe", path, PATH_MAX);
+    if (count <= 0) {
+        return std::string();
+    }
+    return std::string(dirname(path));
 }
 
 std::vector<output_type> cl_to_vina(output_type_cl result_ptr[], 
@@ -110,7 +123,7 @@ void main_procedure_cl(cache& c, const std::vector<model>& ms,  const precalcula
 	printf("\nUsing random seed: %d", seed);
 
 #ifdef BUILD_KERNEL_FROM_SOURCE
-	const std::string default_work_path = ".";
+	const std::string default_work_path = getExecutableDir();
 	const std::string include_path = default_work_path + "/OpenCL/inc"; //FIX it
 	const std::string addtion = "";
 

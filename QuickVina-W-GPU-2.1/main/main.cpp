@@ -334,7 +334,7 @@ void main_procedure(std::vector<model>& ms, const boost::optional<model>& ref, /
 	}
 
 	par.mc.min_rmsd = 1.0;
-	par.mc.num_saved_mins = 20;
+	par.mc.num_saved_mins = num_modes;
 	par.mc.hunt_cap = vec(10, 10, 10);
 	par.num_tasks = exhaustiveness;
 	par.num_threads = cpu;
@@ -490,6 +490,43 @@ model parse_bundle(const boost::optional<std::string>& rigid_name_opt, const boo
 		return parse_bundle(ligand_names);
 }
 
+void read_paths_from_csv(const std::string& csv_file_path, std::vector<std::vector<std::string>>& ligand_names, std::vector<std::string>& out_names) {
+    std::ifstream file(csv_file_path);
+    std::string line;
+
+    // Read the header and check its correctness
+    if (!std::getline(file, line)) return; // Exit if the file is empty
+    std::stringstream header_stream(line);
+    std::string header1, header2;
+    std::getline(header_stream, header1, ',');
+    std::getline(header_stream, header2, ',');
+
+    if (header1 != "input_pdbqt_path" || header2 != "output_pdbqt_path") {
+        std::cerr << "CSV header does not match expected format. It must start with a line that contains the fields `input_pdbqt_path,output_pdbqt_path` " << std::endl;
+        return;
+    }
+
+    while (std::getline(file, line)) {
+        std::stringstream line_stream(line);
+        std::string input_path, output_path;
+        if (!std::getline(line_stream, input_path, ',') || !std::getline(line_stream, output_path, ',')) {
+            std::cerr << "Invalid line format in CSV file: " << line << std::endl;
+            continue; // Skip this line
+        }
+
+        // Check if there's extra data after the two paths
+        std::string extra;
+        if (std::getline(line_stream, extra)) {
+            std::cerr << "Extra data in line, ignoring: " << line << std::endl;
+            continue; // Skip this line
+        }
+
+        ligand_names.push_back(std::vector<std::string>{input_path});
+        out_names.push_back(output_path);
+    }
+}
+
+
 int main(int argc, char* argv[]) {
 	clock_t start = clock();
 
@@ -543,7 +580,7 @@ Thank you!\n";
 #################################################################\n";
 
 	try {
-		std::string rigid_name, ligand_name, flex_name, config_name, out_name, log_name;
+		std::string rigid_name, ligand_name, ligand_list, flex_name, config_name, out_name, log_name;
 		fl center_x = -8.654, center_y = 2.229, center_z = 19.715, size_x = 24.0, size_y = 26.25, size_z = 22.5;
 		int cpu = 1, seed, exhaustiveness = 1, verbosity = 2, num_modes = 9;
 		fl energy_range = 2.0;
@@ -569,8 +606,9 @@ Thank you!\n";
 			("receptor", value<std::string>(&rigid_name), "rigid part of the receptor (PDBQT)")
 			("flex", value<std::string>(&flex_name), "flexible side chains, if any (PDBQT)")
 			("ligand", value<std::string>(&ligand_name), "ligand (PDBQT)")
-			("ligand_directory", value<std::string>(&ligand_directory), "ligand directory, if virtual screening is needed")
-			("output_directory", value<std::string>(&output_directory), "output directory, if virtual screening is needed")
+			("ligand_list", value<std::string>(&ligand_list), "Virtual sceening mode 1: ligand list csv with input and output paths. Each line must contain the input pdbqt path and the output pdbqt path separated by a comma. The first line must be the header with the following entries: `input_pdbqt_path,output_pdbqt_path`.")
+			("ligand_directory", value<std::string>(&ligand_directory), "Virtual screening mode 2: ligand directory. It is recommended to run VS in mode 1 instead with csv file")
+			("output_directory", value<std::string>(&output_directory), "Virtual screening mode 2: output directory, if virtual screening is run through a directory (mode 2)")
 			("thread", value<int>(&thread), "the number of computing lanes in Vina-GPU")
 			("search_depth", value<int>(&search_depth), "the number of search depth in monte carlo")
 			("opencl_binary_path", value<std::string>(&opencl_binary_path)->default_value(opencl_binary_path), "opencl precompiled binary file path")
@@ -736,16 +774,20 @@ Thank you!\n";
 			log << "WARNING: The search space volume > 27000 Angstrom^3 (See FAQ)\n";
 		}
 
-		if (vm.count("ligand") <= 0 && vm.count("ligand_directory") == 1) {
-			std::cout << "Using virtual sreening mode\n\n";
+		if (vm.count("ligand") <= 0 && vm.count("ligand_list") == 1 && vm.count("ligand_directory") == 0) {
+			std::cout << "Using virtual sreening Mode 1 (list of ligands)\n\n";
 		}
 
-		if (vm.count("ligand") <= 0 && vm.count("ligand_directory") <= 0) {
+		if (vm.count("ligand") <= 0 && vm.count("ligand_list") == 0 && vm.count("ligand_directory") == 1) {
+			std::cout << "Using virtual sreening Mode 2 (directory of ligands)\n\n";
+		}
+
+		if (vm.count("ligand") <= 0 && vm.count("ligand_directory") <= 0 && vm.count("ligand_list") <= 0) {
 			std::cerr << "Missing ligand\n";
 			return 1;
 		}
 
-		if (vm.count("ligand") > 0 && vm.count("ligand_directory") <= 0) {
+		if (vm.count("ligand") > 0 && vm.count("ligand_directory") <= 0 && vm.count("ligand_list") <= 0) {
 			std::cout << "Using single ligand docking mode\n\n";
 			if (output_produced) { // FIXME
 				if (!vm.count("out")) {
@@ -799,11 +841,18 @@ Thank you!\n";
 			log << "WARNING: at low exhaustiveness, it may be impossible to utilize all CPUs\n";
 
 		
-
+		// The following block of code reads the ligand names from the input directory. I would like to
+		// add another block of code to read the input ligand paths and their corresponding output paths from a csv file
+		// Assume that csv file has the columns "input_pdbqt_path" and "output_pdbqt_path" with a comma delimiter.
+		// The code will read the csv file and store the paths in the vectors ligand_names and out_names respectively.
+		// Do it for me.
 		std::vector<std::vector<std::string>> ligand_names;
 		std::vector<std::string> out_names;
-		
-		if (vm.count("ligand_directory") == 1) {
+		if (vm.count("ligand_list") == 1) {
+    		// Read from CSV
+    		read_paths_from_csv(vm["ligand_list"].as<std::string>(), ligand_names, out_names);
+		}
+		else if (vm.count("ligand_directory") == 1) {
 			std::string out_dir;
 			if (vm.count("output_directory") == 1)
 				out_dir = output_directory;

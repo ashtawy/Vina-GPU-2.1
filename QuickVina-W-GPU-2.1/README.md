@@ -38,10 +38,10 @@ A graphic user interface (GUI) is also provided for Windows users, please check 
 4. set GPU platform `GPU_PLATFORM` and OpenCL version `OPENCL_VERSION` in `Makefile`. some options are given below:
 
     **Note**: `-DOPENCL_3_0` is highly recommended in Linux, please avoid using `-OPENCL_1_2` in the Makefile setting. To check the OpenCL version on a given platform, use `clinfo`.
-    |Macros|Options|Descriptions|
-    |--|--|--|	
-    |GPU_PLATFORM|-DNVIDIA_PLATFORM / -DAMD_PLATFORM|NVIDIA / AMD GPU platform
-    |  OPENCL_VERSION | -DOPENCL_3_0 / -OPENCL_2_0|OpenCL version 3.0 / 2.0
+    | Macros         | Options                            | Descriptions              |
+    | -------------- | ---------------------------------- | ------------------------- |
+    | GPU_PLATFORM   | -DNVIDIA_PLATFORM / -DAMD_PLATFORM | NVIDIA / AMD GPU platform |
+    | OPENCL_VERSION | -DOPENCL_3_0 / -OPENCL_2_0         | OpenCL version 3.0 / 2.0  |
     
 5. type `make clean` and `make source` to build Vina-GPU+ that compile the kernel files on the fly (this would take some time at the first use)
 7. after a successful compiling, `Vina-GPU+` can be seen in the directory 
@@ -49,25 +49,25 @@ A graphic user interface (GUI) is also provided for Windows users, please check 
 9. once you successfully run Vina-GPU+, its runtime can be further reduced by typing `make clean` and `make` to build it without compiling kernel files (but make sure the `Kernel1_Opt.bin` file and `Kernel2_Opt.bin` file is **unchanged**)
 10. other compile options: 
   
-|Options| Description|
-|--|--|
-| -g | debug|
-|-DDISPLAY_ADDITION_INFO|print addition information
+| Options                 | Description                |
+| ----------------------- | -------------------------- |
+| -g                      | debug                      |
+| -DDISPLAY_ADDITION_INFO | print addition information |
     
 
 ## Usage
-|Arguments| Description|Default value
-|--|--|--|
-|--config | the config file (in .txt format) that contains all the following arguments for the convenience of use| no default
-| --receptor | the recrptor file (in .pdbqt format)| no default
-|--ligand_directory| this path contains all the ligand files，the ligand file (in .pdbqt format)| no default
-|--thread| the scale of parallelism (docking lanes)|1000
-|--search_depth| the number of searching iterations in each docking lane| heuristically determined
-|--center_x/y/z|the center of searching box in the receptor|no default
-|--size_x/y/z|the volume of the searching box|no default 
+| Arguments          | Description                                                                                           | Default value            |
+| ------------------ | ----------------------------------------------------------------------------------------------------- | ------------------------ |
+| --config           | the config file (in .txt format) that contains all the following arguments for the convenience of use | no default               |
+| --receptor         | the recrptor file (in .pdbqt format)                                                                  | no default               |
+| --ligand_directory | this path contains all the ligand files，the ligand file (in .pdbqt format)                           | no default               |
+| --thread           | the scale of parallelism (docking lanes)                                                              | 1000                     |
+| --search_depth     | the number of searching iterations in each docking lane                                               | heuristically determined |
+| --center_x/y/z     | the center of searching box in the receptor                                                           | no default               |
+| --size_x/y/z       | the volume of the searching box                                                                       | no default               |
 
 ## Limitation
-|Arguments| Description|Limitation
-|--|--|--|
-|--thread| the scale of parallelism (docking lanes)| preferably less than 10000
-|--size_x/y/z|the volume of the searching box |less than 30/30/30
+| Arguments    | Description                              | Limitation                 |
+| ------------ | ---------------------------------------- | -------------------------- |
+| --thread     | the scale of parallelism (docking lanes) | preferably less than 10000 |
+| --size_x/y/z | the volume of the searching box          | less than 30/30/30         |

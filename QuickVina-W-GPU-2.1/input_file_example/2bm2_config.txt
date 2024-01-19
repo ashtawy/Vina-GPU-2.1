@@ -1,6 +1,7 @@
 receptor = ./input_file_example/2bm2_protein.pdbqt
-ligand_directory = ./test
-opencl_binary_path = /home/shidi/Vina-GPU-2.1/QuickVina-W-GPU-2.1
+# ligand_directory = ./test
+ligand_list = ./ligand_list.csv
+opencl_binary_path = /home/hashtawy/projects/Vina-GPU-2.1/QuickVina-W-GPU-2.1
 center_x = 40.415
 center_y = 110.986
 center_z = 82.673
