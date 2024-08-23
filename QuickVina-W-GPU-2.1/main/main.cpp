@@ -284,7 +284,7 @@ void main_procedure(std::vector<model>& ms, const boost::optional<model>& ref, /
 	bool score_only, bool local_only, bool randomize_only, bool no_cache,
 	const grid_dims& gd, int exhaustiveness,
 	const flv& weights, float center_x, float center_y, float center_z, float size_x, float size_y, float size_z,
-	int cpu, int seed, int verbosity, sz num_modes, fl energy_range, tee& log, int search_depth, int thread, std::string opencl_binary_path, std::vector<std::vector<std::string>> ligand_names, int rilc_bfgs) {
+	int cpu, int seed, int verbosity, sz num_modes, fl energy_range, fl out_min_rmsd, tee& log, int search_depth, int thread, std::string opencl_binary_path, std::vector<std::vector<std::string>> ligand_names, int rilc_bfgs) {
 
 	doing(verbosity, "Setting up the scoring function", log);
 
@@ -333,7 +333,7 @@ void main_procedure(std::vector<model>& ms, const boost::optional<model>& ref, /
 		par.mc.ssd_par.bfgs_steps.push_back(unsigned((25 + ms[ligand_count].num_movable_atoms()) / 3));
 	}
 
-	par.mc.min_rmsd = 1.0;
+	par.mc.min_rmsd = out_min_rmsd;
 	par.mc.num_saved_mins = num_modes;
 	par.mc.hunt_cap = vec(10, 10, 10);
 	par.num_tasks = exhaustiveness;
@@ -387,7 +387,6 @@ void main_procedure(std::vector<model>& ms, const boost::optional<model>& ref, /
 			continue;
 		}
 
-		const fl out_min_rmsd = 1;
 		out_cont = remove_redundant(out_cont, out_min_rmsd);
 
 		done(verbosity, log);
@@ -584,6 +583,7 @@ Thank you!\n";
 		fl center_x = -8.654, center_y = 2.229, center_z = 19.715, size_x = 24.0, size_y = 26.25, size_z = 22.5;
 		int cpu = 1, seed, exhaustiveness = 1, verbosity = 2, num_modes = 9;
 		fl energy_range = 2.0;
+		fl out_min_rmsd = 1.0;
 		int search_depth = 0;
 		int thread = 5000;
 		std::string ligand_directory, output_directory, opencl_binary_path;
@@ -650,6 +650,7 @@ Thank you!\n";
 			//("exhaustiveness", value<int>(&exhaustiveness)->default_value(1), "exhaustiveness of the global search (roughly proportional to time): 1+")
 			("num_modes", value<int>(&num_modes)->default_value(9), "maximum number of binding modes to generate")
 			("energy_range", value<fl>(&energy_range)->default_value(3.0), "maximum energy difference between the best binding mode and the worst one displayed (kcal/mol)")
+			("min_rmsd_filter", value<fl>(&out_min_rmsd)->default_value(1.0),"rmsd value used to filter final poses to remove redundancy")
 			;
 		options_description config("Configuration file (optional)");
 		config.add_options()
@@ -905,7 +906,7 @@ Thank you!\n";
 			score_only, local_only, randomize_only, false, // no_cache == false
 			gd, exhaustiveness,
 			weights, center_x, center_y, center_z, size_x, size_y, size_z,
-			cpu, seed, verbosity, max_modes_sz, energy_range, log, search_depth, thread, opencl_binary_path, ligand_names, rilc_bfgs);
+			cpu, seed, verbosity, max_modes_sz, energy_range, out_min_rmsd, log, search_depth, thread, opencl_binary_path, ligand_names, rilc_bfgs);
 	}
 	catch (file_error& e) {
 		std::cerr << "\n\nError: could not open \"" << e.name.string() << "\" for " << (e.in ? "reading" : "writing") << ".\n";
